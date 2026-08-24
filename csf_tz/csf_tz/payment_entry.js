@@ -39,7 +39,7 @@ frappe.ui.form.on("Payment Entry", {
 					// Feature is disabled, do not proceed with get_outstanding_documents
 					return;
 				}
-				
+
 				// Feature is enabled, proceed with existing functionality
 			const today = frappe.datetime.get_today();
 			const filters = {
@@ -62,7 +62,7 @@ frappe.ui.form.on("Payment Entry", {
 					// Feature is disabled, do not proceed
 					return;
 				}
-				
+
 				// Continue with normal functionality
 		if (typeof frappe.route_history[frappe.route_history.length - 2] != "undefined") {
 			if (frappe.route_history[frappe.route_history.length - 2][1] in ["Sales Invoice", "Employee Advance", "Purchase Invoice"]) {
@@ -198,7 +198,7 @@ frappe.ui.form.on("Payment Entry", {
 			},
 			{ fieldtype: "Column Break" },
 			{ fieldtype: "Float", label: __("Less Than Amount"), fieldname: "outstanding_amt_less_than" },
-			{ 
+			{
 				fieldtype: "Check",
 				label: __("Allocate Payment Amount"),
 				fieldname: "allocate_payment_amount",
@@ -210,7 +210,7 @@ frappe.ui.form.on("Payment Entry", {
 			fields,
 			function (filters) {
 				frm.clear_table("references");
-				
+
 				if (!frm.doc.party) {
 					frappe.throw(__("Please select a Party first"));
 					return;
@@ -226,7 +226,7 @@ frappe.ui.form.on("Payment Entry", {
 				}
 
 				frappe.flags.allocate_payment_amount = filters.allocate_payment_amount;
-				
+
 				var args = {
 					"posting_date": frm.doc.posting_date,
 					"company": frm.doc.company,
@@ -261,15 +261,15 @@ frappe.ui.form.on("Payment Entry", {
 								c.posting_date = d.posting_date;
 								c.total_amount = d.invoice_amount;
 								c.outstanding_amount = d.outstanding_amount;
-								
+
 								// Add to total outstanding
 								total_positive_outstanding += flt(d.outstanding_amount);
-								
+
 								var party_account_currency = frm.doc.payment_type == "Receive" ?
 									frm.doc.paid_from_account_currency : frm.doc.paid_to_account_currency;
-								
+
 								var company_currency = frappe.get_doc(":Company", frm.doc.company).default_currency;
-								
+
 								if (party_account_currency != company_currency) {
 									c.exchange_rate = d.exchange_rate;
 								} else {
@@ -285,9 +285,9 @@ frappe.ui.form.on("Payment Entry", {
 									frm.set_value("received_amount", total_positive_outstanding);
 								}
 							}
-							
+
 							frm.refresh_fields();
-							
+
 							const paid_amount = frm.doc.payment_type == "Receive" ? frm.doc.paid_amount : frm.doc.received_amount;
 							if (paid_amount && frappe.flags.allocate_payment_amount) {
 								frm.events.allocate_party_amount_against_ref_docs(frm, paid_amount, true);
@@ -305,7 +305,7 @@ frappe.ui.form.on("Payment Entry", {
 	add_write_off_button: function (frm) {
 		// Check if feature is enabled and conditions are met
 		frappe.db
-			.get_single_value("CSF TZ Settings", "enable_write_off_jv_si")
+			.get_single_value("CSF TZ Settings", "enable_write_off_jv_pe")
 			.then((enable_write_off) => {
 				if (enable_write_off &&
 					frm.doc.docstatus === 1 &&
@@ -355,7 +355,8 @@ frappe.ui.form.on("Payment Entry", {
 										},
 										callback: function(r) {
 											if (r.message) {
-												frappe.msgprint(__("Write-off Journal Entry created: {0}", [r.message]));
+												const journal_entry_link = `<a href="/app/journal-entry/${encodeURIComponent(r.message)}" target="_blank">${frappe.utils.escape_html(r.message)}</a>`;
+												frappe.msgprint(__("Write-off Journal Entry created: {0}", [journal_entry_link]));
 												frm.reload_doc();
 											}
 										}
