@@ -187,7 +187,13 @@ def get_conditions(filters):
 
 
 def get_stock_ledger_entries(filters, items):
-	return get_stock_ledger_entries_query(filters, items).orderby(Field("posting_date")).run(as_dict=True)
+	return (
+		get_stock_ledger_entries_query(filters, items)
+		.orderby(Field("posting_date"))
+		.orderby(Field("posting_time"))
+		.orderby(Field("creation"))
+		.run(as_dict=True)
+	)
 
 
 def get_stock_ledger_entries_query(filters, items):
@@ -230,6 +236,8 @@ def get_excisable_entries_query(query, excise_stock, conditions):
 			sle.item_code,
 			sle.warehouse,
 			sle.posting_date,
+			sle.posting_time,
+			sle.creation,
 			sle.actual_qty,
 			sle.valuation_rate,
 			sle.company,
@@ -314,7 +322,10 @@ def get_items(filters):
 		conditions.append(item.name == filters.get("item_code"))
 	else:
 		if filters.get("item_group"):
-			conditions.append(get_item_group_condition(filters.get("item_group"), item))
+			cond = get_item_group_condition(filters.get("item_group"), item)
+			if cond is None:
+				frappe.throw(_("Item Group {0} does not exist").format(filters.get("item_group")))
+			conditions.append(cond)
 
 	items = []
 	if conditions:
