@@ -250,18 +250,21 @@ def get_amount_fields(gl_entry, percentage_allocation=None):
 
 def get_distributed_cost_center_query(filters, accounting_dimensions):
 	gl_entry = frappe.qb.DocType("GL Entry")
-	distributed_cost_center = frappe.qb.DocType("Distributed Cost Center")
+	cca = frappe.qb.DocType("Cost Center Allocation")
+	ccap = frappe.qb.DocType("Cost Center Allocation Percentage")
 
 	conditions = get_conditions(filters, gl_entry, include_cost_center=False)
 	allocation = (
-		frappe.qb.from_(distributed_cost_center)
+		frappe.qb.from_(ccap)
+		.inner_join(cca)
+		.on(ccap.parent == cca.name)
 		.select(
-			distributed_cost_center.parent,
-			Sum(distributed_cost_center.percentage_allocation).as_("percentage_allocation"),
+			cca.main_cost_center.as_("parent"),
+			Sum(ccap.percentage).as_("percentage_allocation"),
 		)
-		.where(distributed_cost_center.cost_center.isin(filters.cost_center))
-		.where(distributed_cost_center.parent.notin(filters.cost_center))
-		.groupby(distributed_cost_center.parent)
+		.where(ccap.cost_center.isin(filters.cost_center))
+		.where(cca.main_cost_center.notin(filters.cost_center))
+		.groupby(cca.main_cost_center)
 	).as_("DCC_allocation")
 
 	return (
