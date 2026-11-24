@@ -3,10 +3,11 @@
 
 import json
 from pathlib import Path
+from time import monotonic
 from urllib.parse import quote, urlsplit
+
 import frappe
 import requests
-from time import monotonic
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cint, flt, getdate, now_datetime
@@ -232,15 +233,11 @@ def receipt_field(response, *names):
 
 
 def get_verification_code(response):
-	return receipt_field(
-		response, "receipVerificationNo", "verificationCode", "traReceiptVerificationCode"
-	)
+	return receipt_field(response, "receipVerificationNo", "verificationCode", "traReceiptVerificationCode")
 
 
 def get_verification_url(response):
-	return receipt_field(
-		response, "invoiceVerificationUrl", "verificationUrl", "traReceiptVerificationUrl"
-	)
+	return receipt_field(response, "invoiceVerificationUrl", "verificationUrl", "traReceiptVerificationUrl")
 
 
 def parse_receipt(response):
@@ -249,7 +246,9 @@ def parse_receipt(response):
 		return False, response
 	success = receipt_field(response, "success") is True
 	status = str(receipt_field(response, "statusCode", "status") or "").upper()
-	return bool((success or status in ("SUCCES", "SUCCESS", "ACCEPTED")) and get_verification_code(response)), response
+	return bool(
+		(success or status in ("SUCCES", "SUCCESS", "ACCEPTED")) and get_verification_code(response)
+	), response
 
 
 def get_receipt_timestamp(response, fallback):
@@ -414,9 +413,7 @@ def get_pergamon_invoice(provider_invoice_id, sales_invoice=None):
 		return {"found": False, "verified": False, "message": _("Invoice ID not found at Pergamon")}
 	if not response.ok or response.status_code >= 300:
 		log_pergamon_diagnostic("get_invoice", status_code=response.status_code, started=started)
-		frappe.throw(
-			_("Pergamon invoice lookup failed with HTTP status {0}").format(response.status_code)
-		)
+		frappe.throw(_("Pergamon invoice lookup failed with HTTP status {0}").format(response.status_code))
 	try:
 		result = response.json()
 	except ValueError:
@@ -481,9 +478,7 @@ def compare_pergamon_invoices(records, erpnext_invoices):
 		provider_amount = receipt_field(receipt, "totalAmount")
 		currency = receipt_field(receipt, "currency")
 		verification = get_verification_code(receipt)
-		expected = (
-			flt(invoice.base_rounded_total or invoice.base_grand_total, 2) if invoice else None
-		)
+		expected = flt(invoice.base_rounded_total or invoice.base_grand_total, 2) if invoice else None
 		amount_matches = (
 			invoice is not None
 			and provider_amount is not None
@@ -499,13 +494,13 @@ def compare_pergamon_invoices(records, erpnext_invoices):
 				"expected_tzs": expected,
 				"currency": currency,
 				"verification_code": verification,
-				"verification_url": receipt_field(
-					receipt, "verificationUrl", "traReceiptVerificationUrl"
-				),
+				"verification_url": receipt_field(receipt, "verificationUrl", "traReceiptVerificationUrl"),
 				"status": (
 					"Verified"
 					if invoice and amount_matches and currency == "TZS" and verification
-					else "Mismatch" if invoice else "Not linked to accessible Sales Invoice"
+					else "Mismatch"
+					if invoice
+					else "Not linked to accessible Sales Invoice"
 				),
 			}
 		)
@@ -564,8 +559,7 @@ def list_pergamon_invoices(sales_invoice):
 	if len(records) > 2000:
 		frappe.throw(_("Pergamon response contains too many invoices for an interactive comparison"))
 	references = [
-		str(receipt_field(row, "traderInvoiceNo") or "").strip()
-		for row in records if isinstance(row, dict)
+		str(receipt_field(row, "traderInvoiceNo") or "").strip() for row in records if isinstance(row, dict)
 	]
 	references = list({ref for ref in references if ref})
 	matched = (
@@ -575,7 +569,8 @@ def list_pergamon_invoices(sales_invoice):
 			fields=["name", "vfd_status", "base_grand_total", "base_rounded_total"],
 			limit_page_length=len(references),
 		)
-		if references else []
+		if references
+		else []
 	)
 	rows = compare_pergamon_invoices(records, matched)
 	return {
@@ -660,7 +655,7 @@ def fetch_pergamon_zreport(company, report_date):
 		body = response.json()
 	except ValueError:
 		frappe.throw(_("Pergamon returned a non-JSON Z Report response"))
-	if not isinstance(body, (dict, list)):
+	if not isinstance(body, dict | list):
 		frappe.throw(_("Pergamon returned an unexpected Z Report response"))
 	amount, count = get_zreport_totals(body)
 	# Use fiscal submission date; invoice posting_date may differ.
@@ -675,9 +670,7 @@ def fetch_pergamon_zreport(company, report_date):
 		fields=["base_grand_total", "base_rounded_total"],
 		limit_page_length=0,
 	)
-	local_amount = flt(
-		sum(flt(row.base_rounded_total or row.base_grand_total, 2) for row in local), 2
-	)
+	local_amount = flt(sum(flt(row.base_rounded_total or row.base_grand_total, 2) for row in local), 2)
 	provider_amount = flt(amount, 2) if amount is not None else None
 	difference = flt(provider_amount - local_amount, 2) if provider_amount is not None else None
 	status = "Pending Schema Confirmation"
@@ -777,7 +770,7 @@ def fetch_pergamon_periodic_report(company, from_date, to_date):
 		body = response.json()
 	except ValueError:
 		frappe.throw(_("Pergamon returned a non-JSON periodic report response"))
-	if not isinstance(body, (dict, list)):
+	if not isinstance(body, dict | list):
 		frappe.throw(_("Pergamon returned an unexpected periodic report response"))
 
 	amount, count = get_zreport_totals(body)
@@ -793,9 +786,7 @@ def fetch_pergamon_periodic_report(company, from_date, to_date):
 		fields=["base_grand_total", "base_rounded_total"],
 		limit_page_length=0,
 	)
-	local_total = flt(
-		sum(flt(row.base_rounded_total or row.base_grand_total, 2) for row in local), 2
-	)
+	local_total = flt(sum(flt(row.base_rounded_total or row.base_grand_total, 2) for row in local), 2)
 	provider_total = flt(amount, 2) if amount is not None else None
 	difference = flt(provider_total - local_total, 2) if provider_total is not None else None
 	status = "Pending Schema Confirmation"
