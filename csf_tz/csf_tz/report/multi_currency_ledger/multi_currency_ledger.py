@@ -18,6 +18,7 @@ from csf_tz.csf_tz.report.gl_entry_conditions import (
 	get_dimension_conditions,
 	get_party_conditions,
 	get_posting_date_conditions,
+	normalize_filter_list,
 )
 from csf_tz.utils.query_builder import get_match_criterion
 
@@ -73,10 +74,10 @@ def validate_filters(filters, account_details):
 		frappe.throw(_("From Date must be before To Date"))
 
 	if filters.get("project"):
-		filters.project = frappe.parse_json(filters.get("project"))
+		filters.project = normalize_filter_list(filters.get("project"))
 
 	if filters.get("cost_center"):
-		filters.cost_center = frappe.parse_json(filters.get("cost_center"))
+		filters.cost_center = normalize_filter_list(filters.get("cost_center"))
 
 
 def validate_party(filters):

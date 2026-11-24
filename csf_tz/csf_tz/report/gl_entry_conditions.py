@@ -1,8 +1,26 @@
+import json
+
 import frappe
 from erpnext.accounts.doctype.accounting_dimension.accounting_dimension import (
 	get_accounting_dimensions,
 	get_dimension_with_children,
 )
+
+
+def normalize_filter_list(value):
+	"""Accept a list, a JSON-encoded list, or a plain string; always return a list.
+
+	The form widget JSON-encodes multi-select values, but API and scheduled-report
+	callers may pass a plain string. frappe.parse_json raises JSONDecodeError on a
+	plain string in v16, so this helper handles all three cases safely.
+	"""
+	if isinstance(value, list | tuple):
+		return list(value)
+	try:
+		parsed = json.loads(value)
+	except (TypeError, ValueError):
+		return [value]
+	return parsed if isinstance(parsed, list) else [parsed]
 
 
 def get_child_accounts_query(account):
