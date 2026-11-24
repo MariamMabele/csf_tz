@@ -76,6 +76,10 @@ class ReceivablePayableReport:
 			self.total_row_map = {}
 			self.skip_total_row = 1
 
+		for key, default in (("range1", 30), ("range2", 60), ("range3", 90), ("range4", 120)):
+			if key not in self.filters:
+				self.filters[key] = default
+
 	def get_data(self):
 		self.get_gl_entries()
 		self.get_sales_invoices_or_customers_based_on_sales_person()
@@ -746,6 +750,13 @@ class ReceivablePayableReport:
 		if self.filters.finance_book:
 			conditions.append(IfNull(gl_entry.finance_book, "").isin([self.filters.finance_book, ""]))
 
+		if self.filters.get("cost_center"):
+			from frappe.utils.nestedset import get_descendants_of
+
+			cost_centers = get_descendants_of("Cost Center", self.filters.cost_center)
+			cost_centers.append(self.filters.cost_center)
+			conditions.append(gl_entry.cost_center.isin(cost_centers))
+
 		if self.filters.get(party_type_field):
 			conditions.append(gl_entry.party == self.filters.get(party_type_field))
 
@@ -757,6 +768,8 @@ class ReceivablePayableReport:
 				"Account", filters={"account_type": account_type, "company": self.filters.company}
 			)
 		]
+		if not accounts:
+			frappe.throw(_("No {0} account found for {1}").format(_(account_type), self.filters.company))
 		conditions.append(gl_entry.account.isin(accounts))
 
 	def add_supplier_filters(self, conditions, gl_entry):
