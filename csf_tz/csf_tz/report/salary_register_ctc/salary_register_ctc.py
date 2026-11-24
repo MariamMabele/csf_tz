@@ -21,8 +21,9 @@ def execute(filters=None):
 		return [], []
 
 	columns, earning_types, ded_types, ded_types_ctc = get_columns(salary_slips)
-	ss_earning_map = get_ss_earning_map(salary_slips, currency, company_currency)
-	ss_ded_map = get_ss_ded_map(salary_slips, currency, company_currency)
+	salary_details = get_salary_details(salary_slips)
+	ss_earning_map = get_ss_earning_map(salary_details, currency, company_currency)
+	ss_ded_map = get_ss_ded_map(salary_details, currency, company_currency)
 	doj_map = get_employee_doj_map()
 
 	data = []
@@ -170,11 +171,13 @@ def get_salary_components(salary_slips, do_not_include_in_total, component_type=
 	)
 	if component_type:
 		query = query.where(salary_component.type == component_type)
-	return query.run(as_dict=True)
+	return query.orderby(salary_detail.salary_component).run(as_dict=True)
 
 
 def get_workflow_state_conditions(filters):
 	if not filters.get("workflow_state"):
+		return []
+	if not frappe.db.exists("Workflow", {"document_type": "Salary Slip", "is_active": 1}):
 		return []
 	return [frappe.qb.DocType("Salary Slip").workflow_state == filters.get("workflow_state")]
 
@@ -202,8 +205,8 @@ def get_salary_details(salary_slips):
 	)
 
 
-def get_ss_earning_map(salary_slips, currency, company_currency):
-	ss_earnings = get_salary_details(salary_slips)
+def get_ss_earning_map(salary_details, currency, company_currency):
+	ss_earnings = salary_details
 
 	ss_earning_map = {}
 	for d in ss_earnings:
@@ -218,8 +221,8 @@ def get_ss_earning_map(salary_slips, currency, company_currency):
 	return ss_earning_map
 
 
-def get_ss_ded_map(salary_slips, currency, company_currency):
-	ss_deductions = get_salary_details(salary_slips)
+def get_ss_ded_map(salary_details, currency, company_currency):
+	ss_deductions = salary_details
 
 	ss_ded_map = {}
 	for d in ss_deductions:
