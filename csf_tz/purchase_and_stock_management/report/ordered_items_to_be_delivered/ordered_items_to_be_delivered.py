@@ -102,6 +102,10 @@ def execute(filters=None):
 		.where(sales_order.status.notin(["Stopped", "Closed"]))
 		.where(IfNull(order_item.delivered_qty, 0) < IfNull(order_item.qty, 0))
 	)
+	if filters.from_date:
+		query = query.where(sales_order.transaction_date >= filters.from_date)
+	if filters.to_date:
+		query = query.where(sales_order.transaction_date <= filters.to_date)
 	if filters.sales_order:
 		query = query.where(sales_order.name == filters.sales_order)
 	if filters.item_code:
