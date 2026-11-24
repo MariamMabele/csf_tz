@@ -76,7 +76,7 @@ def get_marked_items_query(invoice_item, item):
 		.where(dynamic_link.parenttype == "Address")
 		.where(dynamic_link.link_doctype == "Customer")
 		.where(dynamic_link.link_name == sales_invoice.customer)
-		.orderby(address.creation)
+		.orderby(dynamic_link.creation)
 		.limit(1)
 	)
 	first_return_invoice = (

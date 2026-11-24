@@ -78,7 +78,8 @@ def execute(filters=None):
 			loan_assistance.completion_date.as_("end_date"),
 			loan_assistance.loan_status,
 		)
-		.where(loan_assistance.creation[filters.from_date : filters.to_date])
+		.where(Date(loan_assistance.creation) >= filters.from_date)
+		.where(Date(loan_assistance.creation) <= filters.to_date)
 	)
 	if filters.loan_supplier:
 		query = query.where(loan_assistance.loan_supplier == filters.loan_supplier)
