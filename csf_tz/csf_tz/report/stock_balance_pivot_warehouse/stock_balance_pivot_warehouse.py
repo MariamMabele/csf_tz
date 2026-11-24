@@ -16,7 +16,7 @@ def execute(filters=None):
 		return [], []
 
 	columns, warehouses = get_columns(stock_ledger_entry)
-	sle_warehouse_map = get_sle_warehouse_map(stock_ledger_entry)
+	sle_warehouse_map = get_sle_warehouse_map(stock_ledger_entry, filters)
 
 	data = []
 	for sle in stock_ledger_entry:
@@ -60,7 +60,6 @@ def get_columns(stock_ledger_entry):
 
 
 def get_stock_ledger_entries(filters):
-	filters.update({"from_date": filters.get("from_date"), "to_date": filters.get("to_date")})
 	sle = frappe.qb.DocType("Stock Ledger Entry")
 	item = frappe.qb.DocType("Item")
 	stock_ledger_entry = (
@@ -73,10 +72,10 @@ def get_stock_ledger_entries(filters):
 			item.brand,
 			item.item_group,
 			sle.warehouse,
-			Sum(sle.actual_qty).as_("sum(sle.actual_qty)"),
+			Sum(sle.actual_qty).as_("actual_qty"),
 		)
 		.where(Criterion.all(get_conditions(filters)))
-		.groupby(item.item_name, item.brand, item.item_group, sle.warehouse)
+		.groupby(sle.item_code, sle.warehouse)
 		.orderby(item.brand, item.item_group, sle.item_code)
 		.run(as_dict=True)
 	)
@@ -99,27 +98,27 @@ def get_conditions(filters):
 		conditions.append(item.brand == filters.get("brand"))
 	if filters.get("warehouse"):
 		conditions.append(sle.warehouse == filters.get("warehouse"))
+	if filters.get("item_code"):
+		conditions.append(sle.item_code == filters.get("item_code"))
 
 	return conditions
 
 
-def get_sle_warehouse_map(stock_ledger_entry):
+def get_sle_warehouse_map(stock_ledger_entry, filters):
 	sle = frappe.qb.DocType("Stock Ledger Entry")
-	item = frappe.qb.DocType("Item")
+	conditions = get_conditions(filters)
+	conditions.append(sle.item_code.isin([d.item_code for d in stock_ledger_entry]))
 	sle_warehouses = (
 		frappe.qb.from_(sle)
-		.inner_join(item)
-		.on(sle.item_code == item.item_code)
-		.select(sle.item_code, sle.warehouse, Sum(sle.actual_qty).as_("sum(actual_qty)"))
-		.where(sle.item_code.isin([d.item_code for d in stock_ledger_entry]))
-		.groupby(item.item_name, item.brand, item.item_group, sle.warehouse)
+		.select(sle.item_code, sle.warehouse, Sum(sle.actual_qty).as_("actual_qty"))
+		.where(Criterion.all(conditions))
+		.groupby(sle.item_code, sle.warehouse)
 		.run(as_dict=True)
 	)
 
 	sle_warehouse_map = {}
 	for d in sle_warehouses:
-		sle_warehouse_map.setdefault(d.item_code, frappe._dict()).setdefault(d.warehouse, [])
-		# frappe.msgprint(d)
+		sle_warehouse_map.setdefault(d.item_code, frappe._dict())
 		sle_warehouse_map[d.item_code][d.warehouse] = flt(d.actual_qty)
 
 	return sle_warehouse_map
