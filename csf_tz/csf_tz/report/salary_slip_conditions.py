@@ -42,7 +42,6 @@ def get_current_period_conditions(salary_slip, filters, company_currency):
 
 def get_salary_slips(filters, company_currency, extra_conditions=None):
 	"""All Salary Slip columns for the current-period filters, ordered by employee."""
-	filters.update({"from_date": filters.get("from_date"), "to_date": filters.get("to_date")})
 	salary_slip = frappe.qb.DocType("Salary Slip")
 	conditions = get_current_period_conditions(salary_slip, filters, company_currency)
 	return (
