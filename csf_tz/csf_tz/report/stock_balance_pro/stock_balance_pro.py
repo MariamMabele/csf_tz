@@ -5,6 +5,7 @@ import erpnext
 import frappe
 from erpnext.stock.utils import add_additional_uom_columns
 from frappe import _
+from frappe.query_builder import Field
 from frappe.utils import cint, flt, getdate
 from six import iteritems
 
@@ -136,7 +137,13 @@ def get_columns(filters):
 
 
 def get_stock_ledger_entries(filters, items):
-	return get_stock_ledger_entries_query(filters, items).run(as_dict=True)
+	return (
+		get_stock_ledger_entries_query(filters, items)
+		.orderby(Field("posting_date"))
+		.orderby(Field("posting_time"))
+		.orderby(Field("creation"))
+		.run(as_dict=True)
+	)
 
 
 def get_item_warehouse_map(filters, sle):
