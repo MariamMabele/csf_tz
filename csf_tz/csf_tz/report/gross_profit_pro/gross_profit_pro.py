@@ -428,12 +428,15 @@ class GrossProfitGenerator:
 
 	def get_last_purchase_rate(self, item_code, row):
 		purchase_invoice_item = frappe.qb.DocType("Purchase Invoice Item")
+		purchase_invoice = frappe.qb.DocType("Purchase Invoice")
 		query = (
 			frappe.qb.from_(purchase_invoice_item)
+			.join(purchase_invoice)
+			.on(purchase_invoice_item.parent == purchase_invoice.name)
 			.select(purchase_invoice_item.base_rate / purchase_invoice_item.conversion_factor)
 			.where(purchase_invoice_item.item_code == item_code)
 			.where(purchase_invoice_item.docstatus == 1)
-			.orderby(purchase_invoice_item.modified, order=Order.desc)
+			.orderby(purchase_invoice.posting_date, order=Order.desc)
 			.limit(1)
 		)
 		if row.project:
@@ -441,7 +444,7 @@ class GrossProfitGenerator:
 		elif row.cost_center:
 			query = query.where(purchase_invoice_item.cost_center == row.cost_center)
 		if self.filters.to_date:
-			query = query.where(purchase_invoice_item.modified == self.filters.to_date)
+			query = query.where(purchase_invoice.posting_date <= self.filters.to_date)
 
 		last_purchase_rate = query.run()
 
