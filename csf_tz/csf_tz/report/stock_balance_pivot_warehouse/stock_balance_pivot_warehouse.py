@@ -106,8 +106,14 @@ def get_conditions(filters):
 
 def get_sle_warehouse_map(stock_ledger_entry, filters):
 	sle = frappe.qb.DocType("Stock Ledger Entry")
-	conditions = get_conditions(filters)
-	conditions.append(sle.item_code.isin([d.item_code for d in stock_ledger_entry]))
+	# Build conditions using only sle columns: item_group/brand filters are already
+	# reflected in the item_code isin() list; from_date is excluded so we get a
+	# cumulative closing balance (all movements up to to_date), not period movement.
+	conditions = [sle.item_code.isin([d.item_code for d in stock_ledger_entry])]
+	if filters.get("to_date"):
+		conditions.append(sle.posting_date <= filters.get("to_date"))
+	if filters.get("warehouse"):
+		conditions.append(sle.warehouse == filters.get("warehouse"))
 	sle_warehouses = (
 		frappe.qb.from_(sle)
 		.select(sle.item_code, sle.warehouse, Sum(sle.actual_qty).as_("actual_qty"))
