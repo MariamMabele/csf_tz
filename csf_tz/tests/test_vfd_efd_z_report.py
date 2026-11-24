@@ -2,6 +2,8 @@ import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import add_days, nowdate
 
+EXTRA_TEST_RECORD_DEPENDENCIES = ["Company"]
+
 from csf_tz.tests.vfd_test_records import (
 	EXEMPT_TEMPLATE,
 	make_customer,

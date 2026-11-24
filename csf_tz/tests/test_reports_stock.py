@@ -3,6 +3,9 @@ from erpnext.buying.doctype.purchase_order.test_purchase_order import create_pur
 from erpnext.selling.doctype.sales_order.test_sales_order import make_sales_order
 from erpnext.stock.doctype.material_request.test_material_request import make_material_request
 from frappe.tests import IntegrationTestCase
+
+# Ensure ERPNext creates _Test Company, _Test Item, _Test Warehouse - _TC etc. before this module runs.
+EXTRA_TEST_RECORD_DEPENDENCIES = ["Item"]
 from frappe.utils import add_days, today
 
 from csf_tz.tests.report_fixtures import (

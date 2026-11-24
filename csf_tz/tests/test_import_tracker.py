@@ -4,6 +4,8 @@ import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import nowdate
 
+EXTRA_TEST_RECORD_DEPENDENCIES = ["Item"]
+
 from csf_tz.csf_tz.doctype.foreign_import_transaction.foreign_import_transaction import (
 	ForeignImportTransaction,
 )

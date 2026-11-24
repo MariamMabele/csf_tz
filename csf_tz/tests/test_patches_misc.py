@@ -4,6 +4,8 @@ import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_field
 from frappe.tests import IntegrationTestCase
 
+EXTRA_TEST_RECORD_DEPENDENCIES = ["Employee"]
+
 from csf_tz.patches import (
 	add_custom_field_for_cusomer_suppliers_groups,
 	add_custom_fields_for_employee_advance,
