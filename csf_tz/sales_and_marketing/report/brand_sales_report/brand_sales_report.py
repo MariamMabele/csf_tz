@@ -74,8 +74,10 @@ def execute(filters=None):
 
 	data = query.run(as_dict=True)
 
+	unique_customers = {row.customer for row in data}
+	address_map = {c: get_customer_address(c) for c in unique_customers}
 	for customer in data:
-		address = get_customer_address(customer.customer)
+		address = address_map.get(customer.customer)
 		if address:
 			customer.update(address)
 
