@@ -104,15 +104,18 @@ class TestPergamonVFDSettings(FrappeTestCase):
 		doc.posting_date = "2026-10-29"
 		doc.posting_time = "12:53:17.300057"
 		doc.items = [
-			frappe._dict({
-				"item_code": "STO-ITEM-2026-00367",
-				"item_name": "Transit Transportation",
-				"item_tax_template": "ZERO-RATED",
-				"qty": 1,
-				"base_rate": 423360,
-				"base_amount": 423360,
-				"base_net_amount": 423360,
-			}) for _ in range(6)
+			frappe._dict(
+				{
+					"item_code": "STO-ITEM-2026-00367",
+					"item_name": "Transit Transportation",
+					"item_tax_template": "ZERO-RATED",
+					"qty": 1,
+					"base_rate": 423360,
+					"base_amount": 423360,
+					"base_net_amount": 423360,
+				}
+			)
+			for _ in range(6)
 		]
 		with (
 			patch.object(pergamon, "get_item_taxcode", return_value=3),
@@ -125,7 +128,9 @@ class TestPergamonVFDSettings(FrappeTestCase):
 		self.assertEqual(payload["custId"], "999999999")
 		self.assertEqual(payload["dateTime"], "2026-10-30 20:51:09")
 		self.assertEqual(len(payload["salesItems"]), 6)
-		self.assertTrue(all(line["amount"] == 423360 and line["taxCode"] == "C" for line in payload["salesItems"]))
+		self.assertTrue(
+			all(line["amount"] == 423360 and line["taxCode"] == "C" for line in payload["salesItems"])
+		)
 
 	def test_six_standard_rated_tzs_lines_round_to_invoice_total(self):
 		"""ACC-SINV-2026-00077: six base rates plus 18% VAT and rounding."""
@@ -163,7 +168,9 @@ class TestPergamonVFDSettings(FrappeTestCase):
 		self.assertEqual(payload["custId"], "125082890")
 		self.assertEqual(payload["dateTime"], "2026-10-30 20:51:09")
 		self.assertEqual(len(payload["salesItems"]), 6)
-		self.assertTrue(all(row["taxCode"] == "A" and row["amount"] == 450000 for row in payload["salesItems"]))
+		self.assertTrue(
+			all(row["taxCode"] == "A" and row["amount"] == 450000 for row in payload["salesItems"])
+		)
 
 	def test_inconsistent_base_rounding_is_rejected(self):
 		doc = self.make_invoice()
@@ -181,12 +188,12 @@ class TestPergamonVFDSettings(FrappeTestCase):
 		doc.items = [
 			frappe._dict(
 				dict(
-						doc.items[0],
-						item_code=str(i),
-						base_rate=10,
-						base_amount=10,
-						base_net_amount=(8.47 if i == 1 else 10),
-					)
+					doc.items[0],
+					item_code=str(i),
+					base_rate=10,
+					base_amount=10,
+					base_net_amount=(8.47 if i == 1 else 10),
+				)
 			)
 			for i in range(1, 6)
 		]
@@ -280,9 +287,7 @@ class TestPergamonVFDSettings(FrappeTestCase):
 	def test_missing_verification_url_does_not_invent_one(self):
 		response = {"success": True, "verificationCode": "VFD-2026-42"}
 		self.assertTrue(pergamon.parse_receipt(response)[0])
-		self.assertIsNone(
-			pergamon.receipt_field(response, "verificationUrl", "traReceiptVerificationUrl")
-		)
+		self.assertIsNone(pergamon.receipt_field(response, "verificationUrl", "traReceiptVerificationUrl"))
 
 	def test_failed_invoice_can_use_normal_vfd_retry(self):
 		doc = self.make_invoice()
@@ -337,15 +342,22 @@ class TestPergamonVFDSettings(FrappeTestCase):
 	def test_invoice_lookup_requires_linked_sales_invoice(self):
 		self.assertRaises(frappe.ValidationError, pergamon.get_pergamon_invoice, "123")
 
-
 	def test_invoice_list_reconciliation_matches_tzs_and_verification(self):
-		doc = frappe._dict({
-			"name": "SINV-1", "vfd_status": "Failed",
-			"base_grand_total": 250, "base_rounded_total": 250,
-		})
+		doc = frappe._dict(
+			{
+				"name": "SINV-1",
+				"vfd_status": "Failed",
+				"base_grand_total": 250,
+				"base_rounded_total": 250,
+			}
+		)
 		records = [
-			{"traderInvoiceNo": "SINV-1", "totalAmount": 250,
-			 "currency": "TZS", "verificationCode": "VERIFY-1"},
+			{
+				"traderInvoiceNo": "SINV-1",
+				"totalAmount": 250,
+				"currency": "TZS",
+				"verificationCode": "VERIFY-1",
+			},
 			{"traderInvoiceNo": "SINV-2", "totalAmount": 100, "currency": "TZS"},
 		]
 		rows = pergamon.compare_pergamon_invoices(records, [doc])
@@ -353,13 +365,23 @@ class TestPergamonVFDSettings(FrappeTestCase):
 		self.assertEqual(rows[1]["status"], "Not linked to accessible Sales Invoice")
 
 	def test_invoice_list_mismatch_is_not_fiscal_verification(self):
-		doc = frappe._dict({
-			"name": "SINV-1", "vfd_status": "Failed",
-			"base_grand_total": 250, "base_rounded_total": 250,
-		})
+		doc = frappe._dict(
+			{
+				"name": "SINV-1",
+				"vfd_status": "Failed",
+				"base_grand_total": 250,
+				"base_rounded_total": 250,
+			}
+		)
 		rows = pergamon.compare_pergamon_invoices(
-			[{"traderInvoiceNo": "SINV-1", "totalAmount": 250,
-			  "currency": "USD", "verificationCode": "VERIFY-1"}],
+			[
+				{
+					"traderInvoiceNo": "SINV-1",
+					"totalAmount": 250,
+					"currency": "USD",
+					"verificationCode": "VERIFY-1",
+				}
+			],
 			[doc],
 		)
 		self.assertEqual(rows[0]["status"], "Mismatch")
@@ -444,13 +466,16 @@ class TestPergamonVFDSettings(FrappeTestCase):
 			patch.object(pergamon.frappe, "logger") as logger,
 		):
 			pergamon.log_pergamon_diagnostic(
-				"get_invoice", exc=pergamon.requests.exceptions.SSLError("secret"),
+				"get_invoice",
+				exc=pergamon.requests.exceptions.SSLError("secret"),
 			)
 			logger.assert_not_called()
 
 	def test_pergamon_diagnostics_redact_raw_exception(self):
 		with (
-			patch.object(pergamon.frappe.conf, "get", side_effect=lambda key: key == "pergamon_debug_logging"),
+			patch.object(
+				pergamon.frappe.conf, "get", side_effect=lambda key: key == "pergamon_debug_logging"
+			),
 			patch.object(pergamon.frappe, "logger") as logger,
 		):
 			pergamon.log_pergamon_diagnostic(
@@ -466,10 +491,12 @@ class TestPergamonVFDSettings(FrappeTestCase):
 			self.assertNotIn("secret.example", str(args))
 
 	def test_tls_bypass_allowed_only_for_distinct_sandbox_host(self):
-		provider = frappe._dict({
-			"sandbox": 1,
-			"base_url": "https://sandbox.pergamon.example/api/v1",
-		})
+		provider = frappe._dict(
+			{
+				"sandbox": 1,
+				"base_url": "https://sandbox.pergamon.example/api/v1",
+			}
+		)
 		values = {
 			"pergamon_sandbox_url": "https://sandbox.pergamon.example/api/v1",
 			"pergamon_sandbox_skip_tls_verification": 1,
@@ -481,27 +508,33 @@ class TestPergamonVFDSettings(FrappeTestCase):
 			self.assertIs(pergamon.get_tls_verify(provider), True)
 
 	def test_tls_override_allowed_for_confirmed_test_host(self):
-		provider = frappe._dict({
-			"sandbox": 1,
-			"base_url": "https://5.161.57.127:9040/api/v1",
-		})
+		provider = frappe._dict(
+			{
+				"sandbox": 1,
+				"base_url": "https://5.161.57.127:9040/api/v1",
+			}
+		)
 		values = {"pergamon_sandbox_skip_tls_verification": 1}
 		with patch.object(pergamon.frappe.conf, "get", side_effect=lambda key: values.get(key)):
 			self.assertIs(pergamon.get_tls_verify(provider), False)
 
 	def test_confirmed_test_host_rejected_in_production(self):
-		provider = frappe._dict({
-			"sandbox": 0,
-			"base_url": "https://5.161.57.127:9040/api/v1",
-		})
+		provider = frappe._dict(
+			{
+				"sandbox": 0,
+				"base_url": "https://5.161.57.127:9040/api/v1",
+			}
+		)
 		with patch.object(pergamon.frappe.conf, "get", return_value=None):
 			self.assertRaises(frappe.ValidationError, pergamon.get_tls_verify, provider)
 
 	def test_tls_bypass_rejected_when_active_url_is_not_configured_sandbox(self):
-		provider = frappe._dict({
-			"sandbox": 1,
-			"base_url": "https://different.example/api/v1",
-		})
+		provider = frappe._dict(
+			{
+				"sandbox": 1,
+				"base_url": "https://different.example/api/v1",
+			}
+		)
 		values = {
 			"pergamon_sandbox_url": "https://sandbox.pergamon.example/api/v1",
 			"pergamon_sandbox_skip_tls_verification": 1,
