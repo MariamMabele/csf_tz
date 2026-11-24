@@ -268,7 +268,7 @@ def get_gl_entries(filters):
 		converted_gl_list.append(entry)
 
 	if filters.get("presentation_currency"):
-		return convert_to_presentation_currency(converted_gl_list, currency_map)
+		return convert_to_presentation_currency(converted_gl_list, currency_map, filters)
 	else:
 		return converted_gl_list
 
@@ -316,7 +316,13 @@ def get_conditions(filters, gl_entry):
 		finance_books = [filters.finance_book]
 		if filters.get("include_default_book_entries"):
 			finance_books.append(filters.company_fb)
-		conditions.append(gl_entry.finance_book.isin(finance_books))
+			conditions.append(
+				gl_entry.finance_book.isin(finance_books)
+				| gl_entry.finance_book.isnull()
+				| (gl_entry.finance_book == "")
+			)
+		else:
+			conditions.append(gl_entry.finance_book.isin(finance_books))
 
 	if match_criterion := get_match_criterion("GL Entry"):
 		conditions.append(match_criterion)
