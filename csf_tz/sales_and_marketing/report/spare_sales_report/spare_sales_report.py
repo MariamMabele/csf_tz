@@ -52,16 +52,8 @@ def get_items(filters):
 	invoice_item = frappe.qb.DocType("Sales Invoice Item")
 	sales_invoice = frappe.qb.DocType("Sales Invoice")
 	item = frappe.qb.DocType("Item")
-	order_by = sales_invoice.posting_date
 
-	# The original appended the optional filters after ORDER BY, so they extend the sort expression.
-	if filters.brand:
-		order_by &= item.brand == filters.brand
-
-	if filters.shop:
-		order_by &= invoice_item.warehouse == filters.shop
-
-	return (
+	query = (
 		frappe.qb.from_(invoice_item)
 		.left_join(sales_invoice)
 		.on(sales_invoice.name == invoice_item.parent)
@@ -85,6 +77,12 @@ def get_items(filters):
 		.where(item.item_group == "Spare Parts")
 		.where(sales_invoice.customer == "Guest")
 		.where(sales_invoice.posting_date[filters.from_date : filters.to_date])
-		.orderby(order_by)
-		.run(as_dict=True)
+		.orderby(sales_invoice.posting_date)
 	)
+
+	if filters.brand:
+		query = query.where(item.brand == filters.brand)
+	if filters.shop:
+		query = query.where(invoice_item.warehouse == filters.shop)
+
+	return query.run(as_dict=True)

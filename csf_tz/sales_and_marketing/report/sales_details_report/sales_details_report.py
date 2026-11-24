@@ -3,6 +3,7 @@
 
 import frappe
 from frappe import _
+from frappe.query_builder import Criterion
 
 
 def execute(filters=None):
@@ -48,17 +49,14 @@ def execute(filters=None):
 	sales_invoice = frappe.qb.DocType("Sales Invoice")
 	invoice_item = frappe.qb.DocType("Sales Invoice Item")
 	customer = frappe.qb.DocType("Customer")
-	group_by = sales_invoice.name
 
-	# The original appended the optional filters after GROUP BY, so they extend the grouping expression.
+	conditions = []
 	if filters.customer:
-		group_by &= sales_invoice.customer == filters.customer
-
+		conditions.append(sales_invoice.customer == filters.customer)
 	if filters.warehouse:
-		group_by &= invoice_item.warehouse == filters.warehouse
-
+		conditions.append(invoice_item.warehouse == filters.warehouse)
 	if filters.cust_group:
-		group_by &= customer.customer_group == filters.cust_group
+		conditions.append(customer.customer_group == filters.cust_group)
 
 	data = (
 		frappe.qb.from_(sales_invoice)
@@ -76,7 +74,8 @@ def execute(filters=None):
 		)
 		.where(sales_invoice.docstatus == 1)
 		.where(sales_invoice.posting_date[filters.from_date : filters.to_date])
-		.groupby(group_by)
+		.where(Criterion.all(conditions))
+		.groupby(sales_invoice.name)
 		.run(as_dict=True)
 	)
 
