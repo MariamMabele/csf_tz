@@ -48,6 +48,7 @@ def execute(filters=None):
 		.where(quotation.docstatus == 1)
 		.where(quotation.transaction_date[filters.from_date : filters.to_date])
 		.groupby(quotation_item.item_code, quotation_item.warehouse)
+		.orderby(quotation_item.item_code)
 		.run(as_dict=True)
 	)
 	return columns, data

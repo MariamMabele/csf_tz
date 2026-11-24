@@ -68,10 +68,11 @@ def execute(filters=None):
 		.having(Sum(IfNull(request_item.ordered_qty, 0)) < Sum(IfNull(request_item.qty, 0)))
 	)
 	if filters.material_request:
-		query = query.having(material_request.name == filters.material_request)
+		query = query.where(material_request.name == filters.material_request)
 	if filters.item_code:
-		query = query.having(request_item.item_code == filters.item_code)
+		query = query.where(request_item.item_code == filters.item_code)
 
+	query = query.orderby(material_request.transaction_date)
 	data = query.run(as_dict=True)
 
 	return columns, data
