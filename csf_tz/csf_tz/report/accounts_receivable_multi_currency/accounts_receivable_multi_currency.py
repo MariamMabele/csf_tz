@@ -784,9 +784,10 @@ class ReceivablePayableReport:
 						self.filters[dimension.fieldname] = get_dimension_with_children(
 							dimension.document_type, self.filters.get(dimension.fieldname)
 						)
-					conditions.append(
-						gl_entry[dimension.fieldname].isin(tuple(self.filters.get(dimension.fieldname)))
-					)
+					dimension_values = self.filters.get(dimension.fieldname)
+					if not isinstance(dimension_values, list | tuple):
+						dimension_values = [dimension_values]
+					conditions.append(gl_entry[dimension.fieldname].isin(dimension_values))
 
 	def get_gle_balance(self, gle):
 		# get the balance of the GL (debit - credit) or reverse balance based on report type
