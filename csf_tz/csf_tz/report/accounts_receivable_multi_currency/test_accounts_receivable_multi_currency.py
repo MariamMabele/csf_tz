@@ -1,9 +1,9 @@
 """Offline unit tests for accounts_receivable_multi_currency helpers."""
 
+import unittest
 from unittest.mock import MagicMock, patch
 
 import frappe
-from frappe.tests.utils import FrappeTestCase
 
 from csf_tz.csf_tz.report.accounts_receivable_multi_currency import (
 	accounts_receivable_multi_currency as armc,
@@ -14,8 +14,16 @@ def _make_dimension(fieldname, document_type, is_tree=False):
 	return frappe._dict(fieldname=fieldname, document_type=document_type, is_tree=is_tree)
 
 
-class TestAccountingDimensionFilter(FrappeTestCase):
+class TestAccountingDimensionFilter(unittest.TestCase):
 	"""add_accounting_dimensions_filters must not expand a string into characters."""
+
+	@classmethod
+	def setUpClass(cls):
+		frappe.init(site="demo-16", sites_path="/home/mariam-dev/frappe-bench-v16/sites")
+
+	@classmethod
+	def tearDownClass(cls):
+		frappe.destroy()
 
 	def _build_obj(self, dimension_value):
 		"""Build a minimal ReceivablePayableReport-like object with one dimension filter."""

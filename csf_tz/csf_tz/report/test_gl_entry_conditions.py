@@ -1,11 +1,11 @@
 """Offline tests for gl_entry_conditions helpers."""
 
-from frappe.tests.utils import FrappeTestCase
+import unittest
 
 from csf_tz.csf_tz.report.gl_entry_conditions import normalize_filter_list
 
 
-class TestNormalizeFilterList(FrappeTestCase):
+class TestNormalizeFilterList(unittest.TestCase):
 	"""normalize_filter_list must accept a list, a JSON list or a plain name."""
 
 	def test_plain_string_wrapped_in_list(self):
