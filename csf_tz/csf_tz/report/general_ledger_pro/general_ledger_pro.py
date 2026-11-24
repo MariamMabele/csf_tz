@@ -180,9 +180,7 @@ def get_gl_entries(filters, accounting_dimensions):
 
 	gl_entries_students = []
 	if frappe.db.exists("DocType", "Student"):
-		gl_entries_students = get_student_gl_entries(
-			filters, accounting_dimensions, distributed_cost_center_query
-		)
+		gl_entries_students = get_student_gl_entries(filters, accounting_dimensions, None)
 
 	gl_entries = (gl_entries_all_except_students or []) + (gl_entries_students or [])
 
@@ -201,16 +199,15 @@ def get_student_gl_entries(filters, accounting_dimensions, distributed_cost_cent
 		student.first_name, " ", IfNull(student.middle_name, ""), " ", IfNull(student.last_name, "")
 	).as_("party")
 
-	# Fields name `tabGL Entry` while the table is aliased `gle`, as in the original SQL.
 	query = (
 		frappe.qb.from_(aliased_gl_entry)
 		.inner_join(student)
 		.on(aliased_gl_entry.party == student.name)
-		.select(*get_gl_entry_fields(gl_entry, accounting_dimensions, student_name))
-		.select(*get_amount_fields(gl_entry))
+		.select(*get_gl_entry_fields(aliased_gl_entry, accounting_dimensions, student_name))
+		.select(*get_amount_fields(aliased_gl_entry))
 		.where(aliased_gl_entry.party_type == "Student")
-		.where(gl_entry.company == filters.company)
-		.where(Criterion.all(get_conditions(filters, gl_entry)))
+		.where(aliased_gl_entry.company == filters.company)
+		.where(Criterion.all(get_conditions(filters, aliased_gl_entry)))
 	)
 	return run_gl_entry_query(query, distributed_cost_center_query, filters)
 
