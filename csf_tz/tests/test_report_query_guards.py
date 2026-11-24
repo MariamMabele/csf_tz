@@ -8,10 +8,14 @@ Each test covers a behaviour that was fixed and must not regress:
 4. multi-value dimension — string wrapped in list before isin() in gl_entry_conditions
 """
 
+import os
 import unittest
 from unittest.mock import patch
 
 import frappe
+
+_SITE = os.environ.get("TEST_SITE", "demo-16")
+_SITES_PATH = os.environ.get("FRAPPE_SITES_PATH", "/home/mariam-dev/frappe-bench-v16/sites")
 
 
 class TestMatchCriterionBrackets(unittest.TestCase):
@@ -57,7 +61,7 @@ class TestWarehouseTypeBinding(unittest.TestCase):
 
 	@classmethod
 	def setUpClass(cls):
-		frappe.init(site="demo-16", sites_path="/home/mariam-dev/frappe-bench-v16/sites")
+		frappe.init(site=_SITE, sites_path=_SITES_PATH)
 
 	@classmethod
 	def tearDownClass(cls):
@@ -102,7 +106,7 @@ class TestDepartmentIsIn(unittest.TestCase):
 
 	@classmethod
 	def setUpClass(cls):
-		frappe.init(site="demo-16", sites_path="/home/mariam-dev/frappe-bench-v16/sites")
+		frappe.init(site=_SITE, sites_path=_SITES_PATH)
 
 	@classmethod
 	def tearDownClass(cls):
@@ -158,7 +162,7 @@ class TestDimensionMultiValueFilter(unittest.TestCase):
 
 	@classmethod
 	def setUpClass(cls):
-		frappe.init(site="demo-16", sites_path="/home/mariam-dev/frappe-bench-v16/sites")
+		frappe.init(site=_SITE, sites_path=_SITES_PATH)
 
 	@classmethod
 	def tearDownClass(cls):
