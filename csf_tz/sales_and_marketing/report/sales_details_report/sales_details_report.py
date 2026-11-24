@@ -63,7 +63,7 @@ def execute(filters=None):
 		.left_join(invoice_item)
 		.on(sales_invoice.name == invoice_item.parent)
 		.left_join(customer)
-		.on(customer.customer_name == sales_invoice.customer)
+		.on(customer.name == sales_invoice.customer)
 		.select(
 			sales_invoice.customer,
 			sales_invoice.name,
@@ -79,16 +79,18 @@ def execute(filters=None):
 		.run(as_dict=True)
 	)
 
-	for item in data:
-		itm_info = get_submitted_invoice_items()
+	itm_info = get_submitted_invoice_items()
+	items_by_invoice = {}
+	for co in itm_info:
+		items_by_invoice.setdefault(co.si_name, []).append(co)
 
+	for item in data:
 		item.item_no = ""
 		item.quantity = ""
 
-		for co in itm_info:
-			if co.si_name == item.name:
-				item.item_no += '<a href="/desk#Form/Item/' + str(co.itm) + '">' + str(co.itm) + "</a>," + " "
-				item.quantity += str(co.qty) + ", "
+		for co in items_by_invoice.get(item.name, []):
+			item.item_no += '<a href="/app/item/' + str(co.itm) + '">' + str(co.itm) + "</a>," + " "
+			item.quantity += str(co.qty) + ", "
 
 	return columns, data
 
