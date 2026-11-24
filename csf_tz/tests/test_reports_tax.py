@@ -5,6 +5,8 @@ from frappe.utils import now_datetime, today
 
 from csf_tz.tests.report_fixtures import COMPANY, as_dicts, date_range, receive_stock, run_report, sell_stock
 
+EXTRA_TEST_RECORD_DEPENDENCIES = ["Item"]
+
 
 def make_efd_device():
 	return frappe.get_doc(

@@ -6,6 +6,8 @@ from erpnext.stock.doctype.stock_entry.stock_entry_utils import make_stock_entry
 from frappe.tests import IntegrationTestCase
 from frappe.utils import add_days, today
 
+EXTRA_TEST_RECORD_DEPENDENCIES = ["Item"]
+
 from csf_tz.csftz_hooks import item_reposting
 
 MODULE = "csf_tz.csftz_hooks.item_reposting"

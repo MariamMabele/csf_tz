@@ -4,6 +4,8 @@ import frappe
 from erpnext.stock.doctype.landed_cost_voucher.test_landed_cost_voucher import make_landed_cost_voucher
 from frappe.tests import IntegrationTestCase
 
+EXTRA_TEST_RECORD_DEPENDENCIES = ["Item"]
+
 from csf_tz.csftz_hooks.exchange_calculations import (
 	calculate_lcv_exchange_difference,
 	create_exchange_difference_je,
