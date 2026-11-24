@@ -95,6 +95,7 @@ def execute(filters=None):
 	if filters.supplier:
 		query = query.where(purchase_order.supplier == filters.supplier)
 
+	query = query.orderby(purchase_order.transaction_date)
 	data = query.run(as_dict=True)
 
 	return columns, data
